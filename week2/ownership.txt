@@ -9,7 +9,7 @@ fn main() {
     println!("{}", ref3.to_uppercase());
 }
 ```
-
+it doesn't work,because it is borrowed before it is reassigned
 
 
 Example 2:
@@ -20,7 +20,7 @@ fn drip_drop() -> &String {
 }
 ```
 
-
+it doesn't work, returning a reference of local variable is invaild 
 
 Example 3:
 ```
@@ -32,3 +32,4 @@ fn main() {
     println!("{}", s2);
 }
 ```
+vec.push takes the ownership and the type String doesn't implement the Copy trait, so it can't assign to s2 
