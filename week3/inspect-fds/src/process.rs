@@ -14,7 +14,32 @@ impl Process {
     pub fn new(pid: usize, ppid: usize, command: String) -> Process {
         Process { pid, ppid, command }
     }
+    pub fn print(&self) {
+        println!(r#"========== "{}" (pid {}, ppid {}) =========="#, self.command, self.pid, self.ppid);
+        // for item in self.list_fds().unwrap() {
+        //     println!("item fd is {}", item);
+        // }
 
+        match self.list_open_files() {
+            None => println!(
+                "Warning: could not inspect file descriptors for this process! \
+                    It might have exited just as we were about to look at its fd table, \
+                    or it might have exited a while ago and is waiting for the parent \
+                    to reap it."
+            ),
+            Some(open_files) => {
+                for (fd, file) in open_files {
+                    println!(
+                        "{:>4} {:<15} cursor: {:<4} {}",
+                        fd,
+                        format!("({})", file.access_mode),
+                        file.cursor,
+                        file.colorized_name(),
+                    );
+                }
+            }
+        }
+    }
     /// This function returns a list of file descriptor numbers for this Process, if that
     /// information is available (it will return None if the information is unavailable). The
     /// information will commonly be unavailable if the process has exited. (Zombie processes
@@ -23,7 +48,14 @@ impl Process {
     #[allow(unused)] // TODO: delete this line for Milestone 3
     pub fn list_fds(&self) -> Option<Vec<usize>> {
         // TODO: implement for Milestone 3
-        unimplemented!();
+        let path = format!("/proc/{}/fd", self.pid);
+        let mut ret = Vec::new();
+        for entry in fs::read_dir(path).ok()? {
+            // 这里将Result转换为Option
+            let entry = entry.ok()?;
+            ret.push(entry.file_name().into_string().unwrap().parse().unwrap());
+        }
+        Some(ret)
     }
 
     /// This function returns a list of (fdnumber, OpenFile) tuples, if file descriptor
